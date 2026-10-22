@@ -19,6 +19,15 @@ const preview = $('#preview');
 let dirty = false; // es gibt Eingaben
 let exported = false; // seit der letzten Änderung exportiert
 let imageUrl = null;
+let shareFile = null;
+
+// In-App-Browser (Instagram, TikTok, Facebook, Android-WebView …) blockieren Downloads und oft das Teilen.
+// iOS-WebViews erkennt man daran, dass "Safari/" im User-Agent fehlt (Safari, Chrome, Firefox auf iOS haben es).
+const UA = navigator.userAgent;
+const IS_IOS = /iPhone|iPad|iPod/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IN_APP =
+  /Instagram|FBAN|FBAV|FB_IAB|Snapchat|TikTok|BytedanceWebview|musical_ly|LinkedInApp|Line\/|; wv\)/i.test(UA) ||
+  (IS_IOS && !/Safari\//.test(UA));
 
 // ---------- Datum ----------
 
@@ -122,6 +131,43 @@ function toast(message) {
   toastTimer = setTimeout(() => el.classList.remove('is-visible'), 3000);
 }
 
+function canvasToBlob(canvas) {
+  return new Promise((resolve, reject) =>
+    canvas.toBlob(async (b) => {
+      if (b) return resolve(b);
+      // manche Handy-Browser liefern bei großen Bildern null – dann über die Data-URL
+      try {
+        resolve(await (await fetch(canvas.toDataURL('image/png'))).blob());
+      } catch (err) {
+        reject(err);
+      }
+    }, 'image/png'),
+  );
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(blob);
+  });
+}
+
+function openPreview() {
+  if (typeof preview.showModal === 'function') preview.showModal();
+  else {
+    // sehr alte Browser ohne <dialog>
+    preview.setAttribute('open', '');
+    preview.scrollIntoView();
+  }
+}
+
+function closePreview() {
+  if (typeof preview.close === 'function') preview.close();
+  else preview.removeAttribute('open');
+}
+
 async function exportImage() {
   const d = collect();
   if (!completion(d)) {
@@ -133,36 +179,59 @@ async function exportImage() {
   buttons.forEach((b) => (b.disabled = true));
   try {
     const canvas = await renderDay(d);
-    const blob = await new Promise((resolve, reject) =>
-      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
-    );
+    const blob = await canvasToBlob(canvas);
     const name = `ygj-daily-${toIsoDate(d.date)}.png`;
 
     if (imageUrl) URL.revokeObjectURL(imageUrl);
     imageUrl = URL.createObjectURL(blob);
-    $('#previewImg').src = imageUrl;
+    // Data-URL fürs Vorschaubild: Gedrückthalten → "Bild sichern" klappt damit auch in In-App-Browsern
+    $('#previewImg').src = await blobToDataUrl(blob);
     const link = $('#downloadLink');
     link.href = imageUrl;
     link.download = name;
 
-    const file = new File([blob], name, { type: 'image/png' });
+    // Am Handy ist das Teilen-Menü der Hauptweg (iOS: "Bild sichern" landet in den Fotos)
+    shareFile = new File([blob], name, { type: 'image/png' });
+    const canShareFiles = Boolean(navigator.canShare?.({ files: [shareFile] }));
+    const shareFirst = canShareFiles && matchMedia('(pointer: coarse)').matches;
     const shareBtn = $('#shareBtn');
-    shareBtn.hidden = !navigator.canShare?.({ files: [file] });
-    shareBtn.onclick = async () => {
-      try {
-        await navigator.share({ files: [file], title: 'My day – YGJ Daily Tracker' });
-        exported = true;
-      } catch (err) {
-        if (err.name !== 'AbortError') toast('Sharing failed – use Download instead.');
-      }
-    };
+    shareBtn.hidden = !canShareFiles;
+    shareBtn.className = `btn ${shareFirst ? 'btn-gold' : 'btn-ghost'}`;
+    shareBtn.style.order = shareFirst ? '-1' : '';
+    link.className = `btn ${shareFirst ? 'btn-ghost' : 'btn-gold'}`;
 
-    preview.showModal();
+    $('#inAppNote').hidden = !IN_APP;
+    $('#previewHint').textContent =
+      IS_IOS && canShareFiles
+        ? 'Tip: tap “Save / Share” and choose “Save Image” to put it in your Photos. You can also press and hold the image.'
+        : 'You can also press and hold the image to save it.';
+
+    openPreview();
   } catch (err) {
     console.error(err);
-    toast('Could not create the image. Please try again.');
+    toast(`Could not create the image (${err.name || 'error'}). Please try again.`);
   } finally {
     buttons.forEach((b) => (b.disabled = false));
+  }
+}
+
+async function shareImage() {
+  try {
+    // nur die Datei teilen: mit Titel oder Text fehlt auf iOS teils "Bild sichern"
+    await navigator.share({ files: [shareFile] });
+    exported = true;
+  } catch (err) {
+    if (err.name !== 'AbortError') toast(`Sharing failed (${err.name}). Use Download or press and hold the image.`);
+  }
+}
+
+async function copyLink() {
+  const url = location.origin + location.pathname;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Link copied – paste it into Safari or Chrome.');
+  } catch {
+    toast(url);
   }
 }
 
@@ -207,12 +276,15 @@ document.addEventListener('click', (e) => {
   const action = e.target.closest('[data-action]')?.dataset.action;
   if (action === 'export') exportImage();
   else if (action === 'reset') resetAll();
-  else if (action === 'close') preview.close();
+  else if (action === 'close') closePreview();
+  else if (action === 'copy-link') copyLink();
 });
+
+$('#shareBtn').addEventListener('click', shareImage);
 
 // Klick auf den abgedunkelten Hintergrund schließt die Vorschau
 preview.addEventListener('click', (e) => {
-  if (e.target === preview) preview.close();
+  if (e.target === preview) closePreview();
 });
 
 $('#downloadLink').addEventListener('click', () => {
@@ -230,6 +302,7 @@ window.addEventListener('beforeunload', (e) => {
 
 dateInput.value = toIsoDate(new Date());
 $('#year').textContent = new Date().getFullYear();
+$('#inAppBanner').hidden = !IN_APP;
 renderDate();
 enforceBudget();
 update();

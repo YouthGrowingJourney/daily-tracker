@@ -36,6 +36,10 @@
       <h1 class="hero-title">Review today. <em>Build tomorrow.</em></h1>
       <p class="hero-sub">A few honest minutes every evening. Reflect, track, rate&nbsp;– then save your day as an image.</p>
 
+      <p class="notice" id="inAppBanner" hidden>
+        <strong>Heads-up:</strong> you're viewing this inside an app (e.g. Instagram), which can block saving images. Open this page in Safari or Chrome before you start. <button type="button" class="link-btn" data-action="copy-link">Copy link</button>
+      </p>
+
       <div class="day">
         <p class="day-weekday" id="dayWeekday">Today</p>
         <p class="day-date" id="dayDate"></p>
@@ -250,11 +254,14 @@
     <div class="preview-body">
       <img id="previewImg" alt="Exported daily tracker image">
     </div>
+    <p class="notice" id="inAppNote" hidden>
+      <strong>In-app browser:</strong> downloads are blocked here. Press and hold the image to save it, or open this page in Safari or Chrome. <button type="button" class="link-btn" data-action="copy-link">Copy link</button>
+    </p>
     <div class="preview-actions">
       <a class="btn btn-gold" id="downloadLink" download>Download PNG</a>
-      <button type="button" class="btn btn-ghost" id="shareBtn" hidden>Share</button>
+      <button type="button" class="btn btn-ghost" id="shareBtn" hidden>Save / Share</button>
     </div>
-    <p class="preview-hint">On your phone you can also press and hold the image to save it.</p>
+    <p class="preview-hint" id="previewHint">You can also press and hold the image to save it.</p>
   </dialog>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>

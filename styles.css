@@ -123,6 +123,11 @@ a {
   color: var(--gold);
 }
 
+/* hidden muss auch gegen display-Regeln wie .btn { display: inline-flex } gewinnen */
+[hidden] {
+  display: none !important;
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;
@@ -577,10 +582,6 @@ textarea:focus-visible,
   margin: 0;
 }
 
-.duration[hidden] {
-  display: none;
-}
-
 /* Segment-Auswahl und Bewertung: Radio unsichtbar, Label als Button */
 /* gleich breite Segmente, damit drei Optionen auch bei 375 px in eine Zeile passen */
 .seg {
@@ -901,6 +902,38 @@ textarea:focus-visible,
 
 .preview-actions .btn {
   flex: 1 1 160px;
+}
+
+/* Hinweis für In-App-Browser (oben auf der Seite und in der Vorschau) */
+.notice {
+  margin: 20px 0 0;
+  padding: 14px 16px;
+  border: 1px solid var(--gold-line);
+  border-radius: 12px;
+  background: var(--gold-soft);
+  font-size: 15px;
+  line-height: 1.5;
+  text-align: left;
+  color: var(--text);
+}
+
+.notice strong {
+  color: var(--gold);
+}
+
+.preview .notice {
+  margin: 14px 18px 0;
+}
+
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--gold);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
 }
 
 .preview-hint {
