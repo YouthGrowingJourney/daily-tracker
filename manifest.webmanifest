@@ -1,0 +1,14 @@
+{
+  "name": "YGJ Daily Tracker",
+  "short_name": "YGJ Daily",
+  "description": "Review today. Build tomorrow. A daily tracker by Youth Growing Journey.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#333333",
+  "theme_color": "#333333",
+  "icons": [
+    { "src": "assets/apple-touch-icon.png", "sizes": "180x180", "type": "image/png" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

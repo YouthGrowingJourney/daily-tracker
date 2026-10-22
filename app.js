@@ -1,0 +1,235 @@
+/**
+ * YGJ Daily Tracker – Formularlogik.
+ * Bewusst ohne Accounts und ohne Speicherung: Die Eingaben leben nur in diesem Tab,
+ * der Bild-Export ist der einzige Weg, den Tag zu behalten.
+ */
+import { renderDay, WEEKDAY, LONG_DATE } from './export.js';
+
+const JOURNAL_MAX = 1000;
+
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
+
+const form = $('#tracker');
+const dateInput = $('#date');
+const journalFields = $$('[data-journal]', form);
+const plans = $('#plans');
+const preview = $('#preview');
+
+let dirty = false; // es gibt Eingaben
+let exported = false; // seit der letzten Änderung exportiert
+let imageUrl = null;
+
+// ---------- Datum ----------
+
+const pad = (n) => String(n).padStart(2, '0');
+const toIsoDate = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+function selectedDate() {
+  const [y, m, d] = dateInput.value.split('-').map(Number);
+  return y ? new Date(y, m - 1, d) : new Date();
+}
+
+function renderDate() {
+  const d = selectedDate();
+  $('#dayWeekday').textContent = WEEKDAY.format(d);
+  $('#dayDate').textContent = LONG_DATE.format(d);
+}
+
+// ---------- Eingaben ----------
+
+/** Textareas wachsen mit dem Inhalt */
+function autosize(el) {
+  el.style.height = 'auto';
+  el.style.height = `${el.scrollHeight + el.offsetHeight - el.clientHeight}px`;
+}
+
+/** Gemeinsames Zeichenbudget für alle acht Journal-Fragen */
+function enforceBudget(active) {
+  let used = journalFields.reduce((n, f) => n + f.value.length, 0);
+  if (active && used > JOURNAL_MAX) {
+    active.value = active.value.slice(0, active.value.length - (used - JOURNAL_MAX));
+    used = JOURNAL_MAX;
+  }
+  const left = JOURNAL_MAX - used;
+  for (const f of journalFields) f.maxLength = f.value.length + left;
+  $('#budgetUsed').textContent = used.toLocaleString('en-US');
+  $('#budgetFill').style.width = `${(used / JOURNAL_MAX) * 100}%`;
+  $('.budget').classList.toggle('is-full', left === 0);
+}
+
+function readNumber(el) {
+  const v = parseInt(el.value, 10);
+  return Number.isFinite(v) ? Math.min(Math.max(v, 0), Number(el.max)) : null;
+}
+
+function collect() {
+  const radio = (name) => form.querySelector(`input[name="${name}"]:checked`)?.value ?? null;
+  const list = (key) => $$(`[data-list="${key}"] input`, form).map((i) => i.value.slice(0, i.maxLength).trim());
+  const hours = readNumber($('#screenH'));
+  const minutes = readNumber($('#screenM'));
+  const rating = radio('rating');
+
+  return {
+    date: selectedDate(),
+    journal: journalFields.map((f) => ({ question: f.labels[0].textContent.trim(), answer: f.value.trim() })),
+    gratitude: { grateful: list('grateful'), wins: list('wins'), better: list('better') },
+    screenTime: hours === null && minutes === null ? null : { hours: hours ?? 0, minutes: minutes ?? 0 },
+    gym: { status: radio('gym'), minutes: readNumber($('#gymMin')) },
+    meditation: { status: radio('meditation'), minutes: readNumber($('#medMin')) },
+    plans: plans.value.slice(0, plans.maxLength).trim(),
+    rating: rating ? Number(rating) : null,
+  };
+}
+
+/** Anteil ausgefüllter Punkte (22 insgesamt) in Prozent */
+function completion(d) {
+  const items = [
+    ...d.journal.map((j) => j.answer),
+    ...d.gratitude.grateful,
+    ...d.gratitude.wins,
+    ...d.gratitude.better,
+    d.screenTime,
+    d.gym.status,
+    d.meditation.status,
+    d.plans,
+    d.rating,
+  ];
+  return Math.round((items.filter(Boolean).length / items.length) * 100);
+}
+
+function update() {
+  const d = collect();
+  const done = completion(d);
+  $('#progressValue').textContent = done;
+  $('#progressFill').style.width = `${done}%`;
+  $('#ratingBig').textContent = d.rating ? pad(d.rating) : '–';
+  $('#ratingBig').classList.toggle('is-empty', !d.rating);
+  $('#gymDuration').hidden = d.gym.status !== 'trained';
+  $('#medDuration').hidden = d.meditation.status !== 'yes';
+  $('#plansCount').textContent = plans.value.length;
+  dirty = done > 0;
+}
+
+// ---------- Export ----------
+
+let toastTimer;
+function toast(message) {
+  const el = $('#toast');
+  el.textContent = message;
+  el.classList.add('is-visible');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('is-visible'), 3000);
+}
+
+async function exportImage() {
+  const d = collect();
+  if (!completion(d)) {
+    toast('Fill in at least one field first.');
+    return;
+  }
+
+  const buttons = $$('[data-action="export"]');
+  buttons.forEach((b) => (b.disabled = true));
+  try {
+    const canvas = await renderDay(d);
+    const blob = await new Promise((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob failed'))), 'image/png'),
+    );
+    const name = `ygj-daily-${toIsoDate(d.date)}.png`;
+
+    if (imageUrl) URL.revokeObjectURL(imageUrl);
+    imageUrl = URL.createObjectURL(blob);
+    $('#previewImg').src = imageUrl;
+    const link = $('#downloadLink');
+    link.href = imageUrl;
+    link.download = name;
+
+    const file = new File([blob], name, { type: 'image/png' });
+    const shareBtn = $('#shareBtn');
+    shareBtn.hidden = !navigator.canShare?.({ files: [file] });
+    shareBtn.onclick = async () => {
+      try {
+        await navigator.share({ files: [file], title: 'My day – YGJ Daily Tracker' });
+        exported = true;
+      } catch (err) {
+        if (err.name !== 'AbortError') toast('Sharing failed – use Download instead.');
+      }
+    };
+
+    preview.showModal();
+  } catch (err) {
+    console.error(err);
+    toast('Could not create the image. Please try again.');
+  } finally {
+    buttons.forEach((b) => (b.disabled = false));
+  }
+}
+
+function resetAll() {
+  if (dirty && !confirm('Clear all answers and start over?')) return;
+  form.reset();
+  [...journalFields, plans].forEach(autosize);
+  enforceBudget();
+  update();
+  exported = false;
+  window.scrollTo({ top: 0 });
+}
+
+// ---------- Ereignisse ----------
+
+form.addEventListener('input', (e) => {
+  const t = e.target;
+  if (t.matches('[data-journal]')) enforceBudget(t);
+  if (t.tagName === 'TEXTAREA') autosize(t);
+  exported = false;
+  update();
+});
+
+form.addEventListener('change', update);
+
+// Zahlen beim Verlassen auf den erlaubten Bereich begrenzen
+for (const el of $$('.duration input', form)) {
+  el.addEventListener('blur', () => {
+    if (el.value === '') return;
+    el.value = readNumber(el) ?? '';
+    update();
+  });
+}
+
+dateInput.addEventListener('change', () => {
+  if (!dateInput.value) dateInput.value = toIsoDate(new Date());
+  exported = false;
+  renderDate();
+});
+
+document.addEventListener('click', (e) => {
+  const action = e.target.closest('[data-action]')?.dataset.action;
+  if (action === 'export') exportImage();
+  else if (action === 'reset') resetAll();
+  else if (action === 'close') preview.close();
+});
+
+// Klick auf den abgedunkelten Hintergrund schließt die Vorschau
+preview.addEventListener('click', (e) => {
+  if (e.target === preview) preview.close();
+});
+
+$('#downloadLink').addEventListener('click', () => {
+  exported = true;
+});
+
+window.addEventListener('beforeunload', (e) => {
+  if (dirty && !exported) {
+    e.preventDefault();
+    e.returnValue = '';
+  }
+});
+
+// ---------- Start ----------
+
+dateInput.value = toIsoDate(new Date());
+$('#year').textContent = new Date().getFullYear();
+renderDate();
+enforceBudget();
+update();

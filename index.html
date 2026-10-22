@@ -1,0 +1,257 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>YGJ Daily Tracker</title>
+  <meta name="description" content="Journal, gratitude, screen time, gym, meditation and a productivity rating – review your day in a few minutes and save it as a clean image. No account needed.">
+  <meta name="theme-color" content="#333333">
+  <meta property="og:title" content="YGJ Daily Tracker">
+  <meta property="og:description" content="Review today. Build tomorrow. A daily tracker by Youth Growing Journey – no account needed.">
+  <meta property="og:type" content="website">
+  <meta property="og:image" content="https://youthgrowingjourney.github.io/daily-tracker/assets/icon-512.png">
+  <link rel="icon" type="image/png" sizes="48x48" href="assets/favicon-48.png">
+  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="preload" href="assets/fonts/bebas-neue-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="preload" href="assets/fonts/lora-latin.woff2" as="font" type="font/woff2" crossorigin>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="bar">
+    <a class="bar-brand" href="#top" aria-label="YGJ Daily Tracker – back to top">
+      <img src="assets/logo-gold.png" alt="YGJ" width="72" height="40">
+    </a>
+    <div class="bar-progress" aria-live="polite">
+      <span class="bar-progress-label"><span id="progressValue">0</span>% complete</span>
+      <span class="bar-track" aria-hidden="true"><i id="progressFill"></i></span>
+    </div>
+    <button type="button" class="btn btn-gold btn-small" data-action="export">Export</button>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <span class="pill">Daily Tracker</span>
+      <h1 class="hero-title">Review today. <em>Build tomorrow.</em></h1>
+      <p class="hero-sub">A few honest minutes every evening. Reflect, track, rate&nbsp;– then save your day as an image.</p>
+
+      <div class="day">
+        <p class="day-weekday" id="dayWeekday">Today</p>
+        <p class="day-date" id="dayDate"></p>
+        <label class="day-change">
+          <span>Change date</span>
+          <input type="date" id="date" name="date" required>
+        </label>
+      </div>
+    </section>
+
+    <form id="tracker" autocomplete="off" novalidate>
+
+      <!-- 01 Journal -->
+      <section class="card" id="journal" aria-labelledby="journal-title">
+        <header class="sec-head">
+          <span class="sec-num">01 / 05</span>
+          <h2 class="sec-title" id="journal-title">Journal</h2>
+          <p class="sec-sub">Answer honestly. Short is fine&nbsp;– you have 1,000 characters for all eight questions.</p>
+        </header>
+
+        <div class="budget" aria-live="polite">
+          <span class="budget-track" aria-hidden="true"><i id="budgetFill"></i></span>
+          <span class="budget-count"><span id="budgetUsed">0</span> / 1,000</span>
+        </div>
+
+        <div class="q-group">
+          <h3 class="q-group-title">Self-awareness</h3>
+          <div class="field">
+            <label for="q1">What are my biggest weaknesses?</label>
+            <textarea id="q1" name="q1" rows="2" data-journal></textarea>
+          </div>
+        </div>
+
+        <div class="q-group">
+          <h3 class="q-group-title">Direction</h3>
+          <div class="field">
+            <label for="q2">What are my three main goals?</label>
+            <textarea id="q2" name="q2" rows="2" data-journal></textarea>
+          </div>
+          <div class="field">
+            <label for="q3">What can I do tomorrow to get closer to them?</label>
+            <textarea id="q3" name="q3" rows="2" data-journal></textarea>
+          </div>
+          <div class="field">
+            <label for="q4">What skill do I want to improve?</label>
+            <textarea id="q4" name="q4" rows="2" data-journal></textarea>
+          </div>
+        </div>
+
+        <div class="q-group">
+          <h3 class="q-group-title">Accountability</h3>
+          <div class="field">
+            <label for="q5">Did I keep my promises to myself today?</label>
+            <textarea id="q5" name="q5" rows="2" data-journal></textarea>
+          </div>
+          <div class="field">
+            <label for="q6">Where did I make excuses?</label>
+            <textarea id="q6" name="q6" rows="2" data-journal></textarea>
+          </div>
+        </div>
+
+        <div class="q-group">
+          <h3 class="q-group-title">Check-in</h3>
+          <div class="field">
+            <label for="q7">How do I feel physically and mentally?</label>
+            <textarea id="q7" name="q7" rows="2" data-journal></textarea>
+          </div>
+          <div class="field">
+            <label for="q8">What distracted me the most?</label>
+            <textarea id="q8" name="q8" rows="2" data-journal></textarea>
+          </div>
+        </div>
+      </section>
+
+      <!-- 02 Gratitude -->
+      <section class="card" id="gratitude" aria-labelledby="gratitude-title">
+        <header class="sec-head">
+          <span class="sec-num">02 / 05</span>
+          <h2 class="sec-title" id="gratitude-title">Gratitude</h2>
+          <p class="sec-sub">Three things you're grateful for, three things you did well and three things that could have gone better.</p>
+        </header>
+
+        <div class="lists">
+          <fieldset class="list" data-list="grateful">
+            <legend>Grateful for</legend>
+            <label class="list-item"><span>01</span><input type="text" maxlength="80" aria-label="Grateful for, 1"></label>
+            <label class="list-item"><span>02</span><input type="text" maxlength="80" aria-label="Grateful for, 2"></label>
+            <label class="list-item"><span>03</span><input type="text" maxlength="80" aria-label="Grateful for, 3"></label>
+          </fieldset>
+          <fieldset class="list" data-list="wins">
+            <legend>Done well today</legend>
+            <label class="list-item"><span>01</span><input type="text" maxlength="80" aria-label="Done well today, 1"></label>
+            <label class="list-item"><span>02</span><input type="text" maxlength="80" aria-label="Done well today, 2"></label>
+            <label class="list-item"><span>03</span><input type="text" maxlength="80" aria-label="Done well today, 3"></label>
+          </fieldset>
+          <fieldset class="list" data-list="better">
+            <legend>Could go better</legend>
+            <label class="list-item"><span>01</span><input type="text" maxlength="80" aria-label="Could go better, 1"></label>
+            <label class="list-item"><span>02</span><input type="text" maxlength="80" aria-label="Could go better, 2"></label>
+            <label class="list-item"><span>03</span><input type="text" maxlength="80" aria-label="Could go better, 3"></label>
+          </fieldset>
+        </div>
+      </section>
+
+      <!-- 03 Zahlen -->
+      <section class="card" id="numbers" aria-labelledby="numbers-title">
+        <header class="sec-head">
+          <span class="sec-num">03 / 05</span>
+          <h2 class="sec-title" id="numbers-title">Today in numbers</h2>
+          <p class="sec-sub">Screen time, training and meditation.</p>
+        </header>
+
+        <div class="stat">
+          <h3 class="stat-title">Screen time</h3>
+          <div class="duration">
+            <label><input type="number" id="screenH" inputmode="numeric" min="0" max="24" placeholder="0"><span>h</span></label>
+            <label><input type="number" id="screenM" inputmode="numeric" min="0" max="59" placeholder="0"><span>min</span></label>
+          </div>
+        </div>
+
+        <div class="stat">
+          <h3 class="stat-title" id="gym-title">Gym</h3>
+          <div class="seg" role="radiogroup" aria-labelledby="gym-title">
+            <label><input type="radio" name="gym" value="trained"><span>Trained</span></label>
+            <label><input type="radio" name="gym" value="rest"><span>Rest day</span></label>
+            <label><input type="radio" name="gym" value="skipped"><span>Skipped</span></label>
+          </div>
+          <div class="duration" id="gymDuration" hidden>
+            <label><input type="number" id="gymMin" inputmode="numeric" min="0" max="600" placeholder="60"><span>min in the gym</span></label>
+          </div>
+        </div>
+
+        <div class="stat">
+          <h3 class="stat-title" id="med-title">Meditation</h3>
+          <div class="seg" role="radiogroup" aria-labelledby="med-title" style="--options: 2">
+            <label><input type="radio" name="meditation" value="yes"><span>Yes</span></label>
+            <label><input type="radio" name="meditation" value="no"><span>No</span></label>
+          </div>
+          <div class="duration" id="medDuration" hidden>
+            <label><input type="number" id="medMin" inputmode="numeric" min="0" max="600" placeholder="10"><span>min meditated</span></label>
+          </div>
+        </div>
+      </section>
+
+      <!-- 04 Morgen -->
+      <section class="card" id="tomorrow" aria-labelledby="tomorrow-title">
+        <header class="sec-head">
+          <span class="sec-num">04 / 05</span>
+          <h2 class="sec-title" id="tomorrow-title">Tomorrow</h2>
+          <p class="sec-sub">Ideas and plans for the next day.</p>
+        </header>
+        <div class="field">
+          <label for="plans" class="visually-hidden">Ideas and plans for tomorrow</label>
+          <textarea id="plans" name="plans" rows="4" maxlength="500" placeholder="First thing I'll do tomorrow is …"></textarea>
+          <span class="field-count"><span id="plansCount">0</span> / 500</span>
+        </div>
+      </section>
+
+      <!-- 05 Bewertung -->
+      <section class="card" id="rating" aria-labelledby="rating-title">
+        <header class="sec-head">
+          <span class="sec-num">05 / 05</span>
+          <h2 class="sec-title" id="rating-title">Rate your day</h2>
+          <p class="sec-sub">How productive was today, from 1 to 10?</p>
+        </header>
+
+        <div class="rating-display" aria-hidden="true">
+          <span class="rating-big" id="ratingBig">–</span><span class="rating-of">/ 10</span>
+        </div>
+        <div class="rating-scale" role="radiogroup" aria-labelledby="rating-title">
+          <label><input type="radio" name="rating" value="1"><span>1</span></label>
+          <label><input type="radio" name="rating" value="2"><span>2</span></label>
+          <label><input type="radio" name="rating" value="3"><span>3</span></label>
+          <label><input type="radio" name="rating" value="4"><span>4</span></label>
+          <label><input type="radio" name="rating" value="5"><span>5</span></label>
+          <label><input type="radio" name="rating" value="6"><span>6</span></label>
+          <label><input type="radio" name="rating" value="7"><span>7</span></label>
+          <label><input type="radio" name="rating" value="8"><span>8</span></label>
+          <label><input type="radio" name="rating" value="9"><span>9</span></label>
+          <label><input type="radio" name="rating" value="10"><span>10</span></label>
+        </div>
+        <div class="rating-ends" aria-hidden="true"><span>Off day</span><span>Peak day</span></div>
+      </section>
+
+      <!-- Export -->
+      <section class="export" id="export" aria-labelledby="export-title">
+        <h2 class="export-title" id="export-title">Save your <em>day.</em></h2>
+        <p class="sec-sub">Turn today into a clean image with your date, answers and numbers.</p>
+        <div class="export-actions">
+          <button type="button" class="btn btn-gold" data-action="export">Create image</button>
+          <button type="button" class="btn btn-ghost" data-action="reset">Start over</button>
+        </div>
+      </section>
+    </form>
+  </main>
+
+  <footer class="foot">
+    <p class="foot-note">No accounts, no sign-up. YGJ doesn't save your answers automatically&nbsp;– they disappear when you close or reload this page. Export the image to keep your day.</p>
+    <p class="foot-brand">© <span id="year">2026</span> Youth Growing Journey · <a href="https://www.instagram.com/youthgrowingjourney/" rel="noopener" target="_blank">@youthgrowingjourney</a></p>
+  </footer>
+
+  <dialog class="preview" id="preview" aria-labelledby="preview-title">
+    <div class="preview-head">
+      <h2 class="preview-title" id="preview-title">Your day</h2>
+      <button type="button" class="preview-close" data-action="close" aria-label="Close">×</button>
+    </div>
+    <div class="preview-body">
+      <img id="previewImg" alt="Exported daily tracker image">
+    </div>
+    <div class="preview-actions">
+      <a class="btn btn-gold" id="downloadLink" download>Download PNG</a>
+      <button type="button" class="btn btn-ghost" id="shareBtn" hidden>Share</button>
+    </div>
+    <p class="preview-hint">On your phone you can also press and hold the image to save it.</p>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
