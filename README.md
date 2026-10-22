@@ -33,6 +33,7 @@ Täglicher Tracker von **Youth Growing Journey** – ohne Accounts, ohne Server,
 | `styles.css` | Design (Tokens wie in der App) |
 | `app.js` | Formularlogik, Zeichenbudget, Fortschritt, Export-Dialog |
 | `export.js` | Zeichnet das Export-Bild auf ein Canvas |
+| `handoff.js` | Erkennt In-App-Browser (Instagram, Facebook, TikTok …) und öffnet den Tracker samt Eingaben im System-Browser; die Eingaben reisen im Fragment `#d=…` mit (wird nie an einen Server geschickt) |
 | `imprint.html` | Legal notice / Impressum (Betreiber und Kontakt, Englisch) |
 | `privacy.html` | Privacy policy / Datenschutzerklärung (Hosting über GitHub Pages, keine Speicherung, Englisch) |
 

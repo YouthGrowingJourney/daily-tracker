@@ -52,16 +52,27 @@ function loadLogo() {
   return logoPromise;
 }
 
-/** Lädt alle benötigten Schnitte – mit Beispieltext, damit auch latin-ext (z. B. ł, ő) geladen wird. */
+/**
+ * Lädt alle benötigten Schnitte – mit Beispieltext, damit auch latin-ext (z. B. ł, ő) geladen wird.
+ * Schlägt das fehl oder dauert es zu lange (schlechtes Netz), wird mit Ersatzschriften gezeichnet.
+ */
 async function loadFonts(sample) {
   if (!document.fonts?.load) return;
   const text = `ABC abc 0123 ${sample}`;
-  await Promise.all([
+  const loads = Promise.all([
     document.fonts.load(display(40), text),
     document.fonts.load(serif(30), text),
     document.fonts.load(italic(30), text),
-  ]);
+  ]).catch(() => {});
+  await Promise.race([loads, new Promise((resolve) => setTimeout(resolve, 4000))]);
 }
+
+// Messen braucht kein großes Canvas; eins für alle Exporte
+let measureCtx = null;
+
+// Graphem-Cluster, damit Emoji wie 👨‍👩‍👦 beim harten Umbruch nicht zerrissen werden
+const segmenter = typeof Intl.Segmenter === 'function' ? new Intl.Segmenter(undefined, { granularity: 'grapheme' }) : null;
+const graphemes = (s) => (segmenter ? Array.from(segmenter.segment(s), (g) => g.segment) : [...s]);
 
 // ---------- Text-Helfer ----------
 
@@ -99,7 +110,7 @@ function wrap(ctx, text, maxWidth) {
         continue;
       }
       if (line) lines.push(line);
-      let chars = [...word];
+      let chars = graphemes(word);
       while (chars.length > 1 && ctx.measureText(chars.join('')).width > maxWidth) {
         let cut = chars.length - 1;
         while (cut > 1 && ctx.measureText(chars.slice(0, cut).join('')).width > maxWidth) cut--;
@@ -420,7 +431,7 @@ function paint(ctx, d, logo, draw, H) {
   return y;
 }
 
-/** Erzeugt das Canvas mit dem fertigen Bild. */
+/** Erzeugt das Canvas mit dem fertigen Bild. Der Aufrufer gibt es nach dem Export wieder frei. */
 export async function renderDay(d) {
   const sample = [
     ...d.journal.flatMap((j) => [j.question, j.answer]),
@@ -432,8 +443,8 @@ export async function renderDay(d) {
   await loadFonts(sample);
   const logo = await loadLogo().catch(() => null);
 
-  const measure = document.createElement('canvas').getContext('2d');
-  const contentEnd = paint(measure, d, logo, false, MIN_H);
+  measureCtx ??= document.createElement('canvas').getContext('2d');
+  const contentEnd = paint(measureCtx, d, logo, false, MIN_H);
   const H = Math.max(MIN_H, Math.ceil(contentEnd + 220));
 
   const canvas = document.createElement('canvas');
