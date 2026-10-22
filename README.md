@@ -33,8 +33,8 @@ Täglicher Tracker von **Youth Growing Journey** – ohne Accounts, ohne Server,
 | `styles.css` | Design (Tokens wie in der App) |
 | `app.js` | Formularlogik, Zeichenbudget, Fortschritt, Export-Dialog |
 | `export.js` | Zeichnet das Export-Bild auf ein Canvas |
-| `impressum.html` | Impressum (Betreiber und Kontakt) |
-| `datenschutz.html` | Datenschutzerklärung (Hosting über GitHub Pages, keine Speicherung) |
+| `imprint.html` | Legal notice / Impressum (Betreiber und Kontakt, Englisch) |
+| `privacy.html` | Privacy policy / Datenschutzerklärung (Hosting über GitHub Pages, keine Speicherung, Englisch) |
 
 Reines HTML/CSS/JS ohne Build-Schritt. Lokal testen, z. B. mit:
 
